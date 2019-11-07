@@ -29,4 +29,4 @@ Open links in Terminal (Mac): `CMD + [double click]`
 - Petr Polášek
 - Jiří Ostatnický
 
-Hackaton at STRV, (6.11.2019)
+Hackaton at Karlín, (6.11.2019)
