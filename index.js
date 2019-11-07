@@ -10,15 +10,18 @@ const headers = {
   "x-airbnb-carrier-country": "us",
   "accept-language": "en-us"
 };
-const params = {
-  query: "Norway, Lyngen",
-  adults: "6",
+
+const numberOfItemsOnOnePage = 50;
+
+const getParams = (itemsOffset = 0) => ({
+  query: "Czechia,Prague",
+  adults: "8",
   toddlers: "0",
   infants: "0",
   is_guided_search: "true",
   version: "1.4.8",
   section_offset: "0",
-  items_offset: "0",
+  items_offset: itemsOffset,
   screen_size: "small",
   source: "explore_tabs",
   items_per_grid: "500",
@@ -27,11 +30,13 @@ const params = {
   "refinement_paths[]": "/homes",
   timezone: "Europe/Prague",
   satori_version: "1.1.0"
-};
+});
 
-const paramString = Object.keys(params)
-  .map(key => `${key}=${encodeURIComponent(params[key])}`)
-  .join("&");
+const filterAsync = (array, filter) =>
+  Promise.all(array.map(entry => filter(entry))).then(bits =>
+    array.filter(entry => bits.shift())
+  );
+
 const fetchHome = id => {
   const request = fetch(
     `https://api.airbnb.com/v2/pdp_listing_details/${id}?_format=for_native`,
@@ -73,27 +78,30 @@ const fetchHome = id => {
   return request;
 };
 
-const filterAsync = (array, filter) =>
-  Promise.all(array.map(entry => filter(entry))).then(bits =>
-    array.filter(entry => bits.shift())
-  );
-
-fetch(`https://api.airbnb.com/v2/explore_tabs?${paramString}`, {
-  method: "get",
-  headers: headers
-})
-  .then(body => body.json().catch(e => null))
-  .then(body => {
-    if (body) {
-      const ids = body.explore_tabs[0].home_tab_metadata.remarketing_ids;
-      console.log(
-        `Saunas ${params.query} (search in ${
-          ids.length
-        } results)\n============================`
-      );
-      const saunasUrls = filterAsync(ids, fetchHome);
-    }
+const fetchResultPage = (offset = 0) => {
+  const params = getParams(offset);
+  const paramString = Object.keys(params)
+    .map(key => `${key}=${encodeURIComponent(params[key])}`)
+    .join("&");
+  // console.log(`https://api.airbnb.com/v2/explore_tabs?${paramString}`);
+  fetch(`https://api.airbnb.com/v2/explore_tabs?${paramString}`, {
+    method: "get",
+    headers: headers
   })
-  .catch(e => {
-    console.log(e);
-  });
+    .then(body => body.json().catch(e => null))
+    .then(body => {
+      if (body) {
+        const ids = body.explore_tabs[0].home_tab_metadata.remarketing_ids;
+
+        const saunasUrls = filterAsync(ids, fetchHome);
+        if (body.explore_tabs[0].pagination_metadata.has_next_page) {
+          fetchResultPage(offset + numberOfItemsOnOnePage);
+        }
+      }
+    })
+    .catch(e => {
+      console.log(e);
+    });
+};
+console.log(`Saunas ${getParams().query}\n============================`);
+fetchResultPage();
