@@ -1,29 +1,35 @@
 const fetch = require("node-fetch");
 
+const numberOfItemsOnOnePage = 50;
+const maximumOfRequests = 50;
+const currency = "CZK";
+
+const editableParams = {
+  query: "Lofoten, Norway",
+  checkin: "2020-04-01",
+  checkout: "2020-04-17",
+  price_min: 0,
+  price_max: 10000,
+  adults: 6
+  // infants: 0,
+  // superhost: "true",
+};
+
 const headers = {
   accept: "application/json",
   "accept-encoding": "br, gzip, deflate",
   "content-type": "application/json",
   "x-airbnb-api-key": "915pw2pnf4h1aiguhph5gc5b2",
-  "x-airbnb-currency": "CZK",
+  "x-airbnb-currency": currency,
   "x-airbnb-locale": "en",
   "x-airbnb-carrier-country": "us",
   "accept-language": "en-us"
 };
 
-const numberOfItemsOnOnePage = 50;
-const maximumOfRequests = 60;
-let numberOfRequests = 0;
-
 const getParams = (itemsOffset = 0) => ({
-  query: "Switzerland",
-  // checkIn: "2020-04-01",
-  // checkOut: "2020-04-17",
-  // price_max: 3000,
-  numberOfAdults: 6,
-  adults: "8",
+  ...editableParams,
+  _limit: numberOfItemsOnOnePage,
   toddlers: "0",
-  infants: "0",
   is_guided_search: "true",
   version: "1.4.8",
   section_offset: "0",
@@ -37,6 +43,8 @@ const getParams = (itemsOffset = 0) => ({
   timezone: "Europe/Prague",
   satori_version: "1.1.0"
 });
+
+let numberOfRequests = 0;
 
 const filterAsync = (array, filter) =>
   Promise.all(array.map(entry => filter(entry))).then(bits =>
@@ -75,7 +83,14 @@ const fetchHome = id => {
             .indexOf("saun") !== -1;
 
         if (isSaunaAvailable) {
-          console.log(`- https://www.airbnb.cz/rooms/${id}`);
+          const params = getParams();
+          const homeUrl = `https://www.airbnb.cz/rooms/${id}`;
+          const homeUrlWithDateInterval = params.checkin
+            ? `${homeUrl}?check_in=${params.checkin}&check_out=${
+                params.checkout
+              }`
+            : homeUrl;
+          console.log(`- ${homeUrlWithDateInterval}`);
         }
       }
     })

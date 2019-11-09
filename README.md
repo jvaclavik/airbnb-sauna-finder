@@ -10,7 +10,7 @@ Airbnb is a bad service without the possibility of filtering by sauna. This scri
 yarn
 ```
 
-2. Set `params` (index.js)
+2. Set `editableParams` (index.js)
 
 3. Run script
 
