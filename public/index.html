@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <title>Airbnb sauna finder</title>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+    .container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .item{ 
+      width: 300px;
+      height: 200px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      background-size: cover;
+      border-radius: 10px;
+    }
+    a:hover {
+      opacity: 0.8;
+      transition: all 0.1s ease;
+    }
+    input {
+      border-radius: 5px;
+      line-height: 30px;
+      border: solid 1px #ccc;
+      padding: 0 10px;
+    }
+    input[type="submit"]{
+      background: #FF5A5F;
+      border: solid 1px #FF5A5F;
+      color: white;
+      padding: 0px 30px;
+    }
+    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body>
+    <h1>Airbnb sauna finder</h1>
+    <form method="GET">
+      Location: <input type="text" name="query" />
+      <input type="submit" value="Search" />
+    </form><br>
+    <div class="container"><%- links %></div>
+  </body>
+</html>

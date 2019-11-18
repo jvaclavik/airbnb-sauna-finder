@@ -2,6 +2,9 @@
 
 Airbnb is a bad service without the possibility of filtering by sauna. This script should fix it.
 
+## Screenshot
+<img src="screenshot.jpg" />
+
 ## Use
 
 1. Install dependencies
@@ -10,13 +13,15 @@ Airbnb is a bad service without the possibility of filtering by sauna. This scri
 yarn
 ```
 
-2. Set `editableParams` (index.js)
+3. Set `editableParams` (index.js)
 
-3. Run script
+4. Run server
 
 ```
 yarn start
 ```
+
+5. Run `http://localhost:8085/` in your browser
 
 ## Info
 

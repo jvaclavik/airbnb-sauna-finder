@@ -1,13 +1,34 @@
 const fetch = require("node-fetch");
 
-const numberOfItemsOnOnePage = 50;
-const maximumOfRequests = 50;
+const express = require("express");
+const path = require("path");
+
+const port = process.env.PORT || 8085;
+const app = express();
+
+const numberOfItemsOnOnePage = 10;
+const maximumOfRequests = 20;
 const currency = "CZK";
+let saunaLinks = "";
+let numberOfRequests = 0;
+
+app.use(express.static(__dirname, { dotfiles: "allow" }));
+app.engine("html", require("ejs").renderFile);
+app.get("/", async function(req, res) {
+  saunaLinks = "";
+  numberOfRequests = 0;
+  if (req.query) {
+    console.log(req.query.query);
+    await fetchResultPage(req.query.query);
+    res.render(__dirname + "/public/index.html", { links: saunaLinks });
+  }
+});
+app.listen(port);
 
 const editableParams = {
-  query: "Lofoten, Norway",
-  checkin: "2020-04-01",
-  checkout: "2020-04-17",
+  // query: "Helsinki, Finland",
+  // checkin: "2020-04-01",
+  // checkout: "2020-04-17",
   price_min: 0,
   price_max: 10000,
   adults: 6
@@ -44,8 +65,6 @@ const getParams = (itemsOffset = 0) => ({
   satori_version: "1.1.0"
 });
 
-let numberOfRequests = 0;
-
 const filterAsync = (array, filter) =>
   Promise.all(array.map(entry => filter(entry))).then(bits =>
     array.filter(entry => bits.shift())
@@ -68,6 +87,7 @@ const fetchHome = id => {
     .then(body => {
       if (body) {
         const descriptionObject = body.pdp_listing_detail.sectioned_description;
+        const photo = body.pdp_listing_detail.photos[0].large;
         const searchedInFields = [
           "space",
           "summary",
@@ -85,11 +105,11 @@ const fetchHome = id => {
         if (isSaunaAvailable) {
           const params = getParams();
           const homeUrl = `https://www.airbnb.cz/rooms/${id}`;
-          const homeUrlWithDateInterval = params.checkin
-            ? `${homeUrl}?check_in=${params.checkin}&check_out=${
-                params.checkout
-              }`
-            : homeUrl;
+          const homeUrlWithDateInterval =
+            params.checkin && params.checkout
+              ? `${homeUrl}?check_in=${params.checkin}&check_out=${params.checkout}`
+              : homeUrl;
+          saunaLinks = `${saunaLinks}<a href="${homeUrlWithDateInterval}" target="_blank"><div class="item" style="background-image: url('${photo}')"></div></a>`;
           console.log(`- ${homeUrlWithDateInterval}`);
         }
       }
@@ -101,32 +121,37 @@ const fetchHome = id => {
   return request;
 };
 
-const fetchResultPage = (offset = 0) => {
-  if (numberOfRequests > maximumOfRequests) return;
+const fetchResultPage = async (query = null, offset = 0) => {
+  if (numberOfRequests > maximumOfRequests || query === null) return;
   const params = getParams(offset);
-  const paramString = Object.keys(params)
-    .map(key => `${key}=${encodeURIComponent(params[key])}`)
-    .join("&");
-  // console.log(`https://api.airbnb.com/v2/explore_tabs?${paramString}`);
-  fetch(`https://api.airbnb.com/v2/explore_tabs?${paramString}`, {
-    method: "get",
-    headers: headers
-  })
-    .then(body => body.json().catch(e => null))
-    .then(body => {
-      if (body) {
-        const ids = body.explore_tabs[0].home_tab_metadata.remarketing_ids;
+  console.log(`Query: ${query}`);
+  const paramString =
+    Object.keys(params)
+      .map(key => `${key}=${encodeURIComponent(params[key])}`)
+      .join("&") + `&query=${query}`;
 
-        const saunasUrls = filterAsync(ids, fetchHome);
-        if (body.explore_tabs[0].pagination_metadata.has_next_page) {
-          fetchResultPage(offset + numberOfItemsOnOnePage);
-        }
+  console.log(`https://api.airbnb.com/v2/explore_tabs?${paramString}`);
+  const request = await fetch(
+    `https://api.airbnb.com/v2/explore_tabs?${paramString}`,
+    {
+      method: "get",
+      headers: headers
+    }
+  );
+  try {
+    const body = await request.json();
+    if (body) {
+      const ids = body.explore_tabs[0].home_tab_metadata.remarketing_ids;
+      const homePromise = await filterAsync(ids, fetchHome);
+      if (body.explore_tabs[0].pagination_metadata.has_next_page) {
+        await fetchResultPage(query, offset + numberOfItemsOnOnePage);
       }
-    })
-    .catch(e => {
-      console.log(e);
-    });
+    }
+  } catch (err) {
+    console.log("error");
+  }
+
   numberOfRequests++;
 };
-console.log(`Saunas ${getParams().query}\n============================`);
+console.log(`Saunas\n============================`);
 fetchResultPage();

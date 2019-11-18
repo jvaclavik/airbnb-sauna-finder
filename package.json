@@ -1,11 +1,15 @@
 {
   "dependencies": {
-    "node-fetch": "^2.6.0"
+    "ejs": "^2.7.1",
+    "express": "^4.17.1",
+    "node-fetch": "^2.6.0",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "nodemon": "^1.19.4"
   },
   "scripts": {
-    "start": "nodemon --exec node index.js"
+    "start": "nodemon --exec node index.js",
+    "build": "node index.js"
   }
 }
